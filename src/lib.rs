@@ -1,13 +1,18 @@
+mod animating;
 mod arena;
 mod camera;
 mod player;
+mod player_controls;
 
 use bevy::prelude::*;
 use bevy_rapier2d::plugin::RapierConfiguration;
 use bevy_yoleck::prelude::*;
 
+use self::animating::AnimatingPlugin;
 use self::arena::ArenaPlugin;
 use self::camera::MazeOfManyMissilesCameraPlugin;
+use self::player::PlayerPlugin;
+use self::player_controls::PlayerControlsPlugin;
 
 pub struct MazeOfManyMissilesPlugin {
     pub is_editor: bool,
@@ -41,12 +46,15 @@ impl Plugin for MazeOfManyMissilesPlugin {
                 };
                 app.add_systems(
                     Startup,
-                    move |mut commands: Commands, asset_server: Res<AssetServer>| {
+                    move |mut commands: Commands,
+                          asset_server: Res<AssetServer>,
+                          mut state: ResMut<NextState<AppState>>| {
                         // TODO: replace this system with a `LevelProgress` based system (or whatever
                         // I'll use for level progress)
                         commands.spawn(YoleckLoadLevel(
                             asset_server.load(format!("levels/{start_at_level}")),
                         ));
+                        state.set(AppState::Game);
                     },
                 );
                 //app.add_systems(
@@ -59,9 +67,10 @@ impl Plugin for MazeOfManyMissilesPlugin {
                 //);
             }
         }
-        //app.add_plugins(PlayerPlugin);
+        app.add_plugins(AnimatingPlugin);
+        app.add_plugins(PlayerPlugin);
         app.add_plugins(ArenaPlugin);
-        //app.add_plugins(PlayerControlsPlugin);
+        app.add_plugins(PlayerControlsPlugin);
         //app.add_plugins(FloatingTextPlugin);
 
         app.add_systems(Update, enable_disable_physics);

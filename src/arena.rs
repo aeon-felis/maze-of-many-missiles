@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use bevy_yoleck::prelude::*;
 use bevy_yoleck::vpeol_3d::{Vpeol3dPosition, Vpeol3dRotatation, Vpeol3dScale};
 
@@ -45,6 +46,8 @@ fn populate_block(
                 material,
                 ..Default::default()
             });
+            cmd.insert(RigidBody::Fixed);
+            cmd.insert(Collider::cuboid(0.5, 0.5));
         }
     });
 }
