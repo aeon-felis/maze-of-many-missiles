@@ -1,6 +1,13 @@
+mod arena;
+mod camera;
+mod player;
+
 use bevy::prelude::*;
 use bevy_rapier2d::plugin::RapierConfiguration;
 use bevy_yoleck::prelude::*;
+
+use self::arena::ArenaPlugin;
+use self::camera::MazeOfManyMissilesCameraPlugin;
 
 pub struct MazeOfManyMissilesPlugin {
     pub is_editor: bool,
@@ -17,7 +24,7 @@ impl Plugin for MazeOfManyMissilesPlugin {
             ),
         );
         app.add_state::<AppState>();
-        // app.add_plugins(MazeOfManyMissilesCameraPlugin);
+        app.add_plugins(MazeOfManyMissilesCameraPlugin);
         if self.is_editor {
             app.add_plugins(YoleckSyncWithEditorState {
                 when_editor: AppState::Editor,
@@ -43,7 +50,7 @@ impl Plugin for MazeOfManyMissilesPlugin {
             //}
         }
         //app.add_plugins(PlayerPlugin);
-        //app.add_plugins(ArenaPlugin);
+        app.add_plugins(ArenaPlugin);
         //app.add_plugins(PlayerControlsPlugin);
         //app.add_plugins(FloatingTextPlugin);
 
