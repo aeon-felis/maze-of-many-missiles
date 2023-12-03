@@ -33,21 +33,31 @@ impl Plugin for MazeOfManyMissilesPlugin {
         } else {
             //app.add_plugins(MenuPlugin);
             //app.add_plugins(LevelHandlingPlugin);
-            //if let Some(start_at_level) = &self.start_at_level {
-            //let start_at_level = if start_at_level.ends_with(".yol") {
-            //start_at_level.clone()
-            //} else {
-            //format!("{}.yol", start_at_level)
-            //};
-            //app.add_systems(
-            //Startup,
-            //move |mut level_progress: ResMut<LevelProgress>,
-            //mut app_state: ResMut<NextState<AppState>>| {
-            //level_progress.current_level = Some(start_at_level.clone());
-            //app_state.set(AppState::LoadLevel);
-            //},
-            //);
-            //}
+            if let Some(start_at_level) = &self.start_at_level {
+                let start_at_level = if start_at_level.ends_with(".yol") {
+                    start_at_level.clone()
+                } else {
+                    format!("{}.yol", start_at_level)
+                };
+                app.add_systems(
+                    Startup,
+                    move |mut commands: Commands, asset_server: Res<AssetServer>| {
+                        // TODO: replace this system with a `LevelProgress` based system (or whatever
+                        // I'll use for level progress)
+                        commands.spawn(YoleckLoadLevel(
+                            asset_server.load(format!("levels/{start_at_level}")),
+                        ));
+                    },
+                );
+                //app.add_systems(
+                //Startup,
+                //move |mut level_progress: ResMut<LevelProgress>,
+                //mut app_state: ResMut<NextState<AppState>>| {
+                //level_progress.current_level = Some(start_at_level.clone());
+                //app_state.set(AppState::LoadLevel);
+                //},
+                //);
+            }
         }
         //app.add_plugins(PlayerPlugin);
         app.add_plugins(ArenaPlugin);
