@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
+use bevy_tnua::builtins::TnuaBuiltinDash;
 use bevy_tnua::control_helpers::TnuaSimpleAirActionsCounter;
 use bevy_tnua::prelude::*;
 use bevy_yoleck::prelude::*;
@@ -46,6 +49,7 @@ fn add_controls_to_player(mut populate: YoleckPopulate<(), With<IsPlayer>>) {
             },
         });
         cmd.insert(PlayerAirCounters::default());
+        cmd.insert(DoubleClickInputs::default());
     });
 }
 
@@ -62,23 +66,101 @@ impl PlayerAirCounters {
     }
 }
 
+#[derive(Default)]
+enum DoubleClickDetector {
+    #[default]
+    Idle,
+    Pressed,
+    Maybe,
+    Active,
+    MaybeActive,
+    Pending(Duration),
+}
+
+impl DoubleClickDetector {
+    fn update(&mut self, time_delta: Duration) {
+        match self {
+            Self::Idle => {}
+            Self::Pressed => {
+                *self = Self::Maybe;
+            }
+            Self::Maybe => {
+                *self = Self::Pending(time_delta);
+            }
+            Self::Active => {
+                *self = Self::MaybeActive;
+            }
+            Self::MaybeActive => {
+                *self = Self::Idle;
+            }
+            Self::Pending(duration) => {
+                *duration += time_delta;
+            }
+        }
+    }
+
+    fn update_pressed(&mut self) {
+        match self {
+            Self::Idle | Self::Maybe => {
+                *self = Self::Pressed;
+            }
+            Self::Pressed | Self::Active => {}
+            Self::MaybeActive => {
+                *self = Self::Active;
+            }
+            Self::Pending(duration) => {
+                *self = if duration.as_secs_f64() < 0.3 {
+                    Self::Active
+                } else {
+                    Self::Pressed
+                };
+            }
+        }
+    }
+
+    fn is_active(&self) -> bool {
+        matches!(self, Self::Active)
+    }
+}
+
+#[derive(Component, Default)]
+struct DoubleClickInputs {
+    left: DoubleClickDetector,
+    right: DoubleClickDetector,
+}
+
+impl DoubleClickInputs {
+    fn update(&mut self, time_delta: Duration) {
+        let Self { left, right } = self;
+        left.update(time_delta);
+        right.update(time_delta);
+    }
+}
+
 fn apply_controls(
+    time: Res<Time>,
     mut query: Query<(
         &ActionState<PlayerAction>,
         &mut TnuaController,
         &mut PlayerFacing,
         &mut PlayerAirCounters,
+        &mut DoubleClickInputs,
     )>,
 ) {
-    for (input, mut controller, mut player_facing, mut air_counters) in query.iter_mut() {
+    for (input, mut controller, mut player_facing, mut air_counters, mut double_click_inputs) in
+        query.iter_mut()
+    {
         let controller = controller.as_mut();
         air_counters.update(controller);
+        double_click_inputs.update(time.delta());
 
         let desired_velocity = if let Some(axis_pair) = input.clamped_axis_pair(PlayerAction::Run) {
             if axis_pair.x() <= -0.1 {
                 *player_facing = PlayerFacing::Left;
+                double_click_inputs.left.update_pressed();
             } else if 0.1 <= axis_pair.x() {
                 *player_facing = PlayerFacing::Right;
+                double_click_inputs.right.update_pressed();
             }
             Vec3::X * 20.0 * axis_pair.x()
         } else {
@@ -113,5 +195,25 @@ fn apply_controls(
                 }
             }
         }
+
+        for (double_click_input, direction_x) in [
+            (&double_click_inputs.left, -1.0),
+            (&double_click_inputs.right, 1.0),
+        ] {
+            if double_click_input.is_active() {
+                controller.action(TnuaBuiltinDash {
+                    displacement: 10.0 * direction_x * Vec3::X,
+                    // desired_forward: todo!(),
+                    allow_in_air: true,
+                    speed: 120.0,
+                    // brake_to_speed: todo!(),
+                    acceleration: 800.0,
+                    // brake_acceleration: todo!(),
+                    // input_buffer_time: todo!(),
+                    ..Default::default()
+                });
+            }
+        }
+        // }, double_click_inputs.right.is_active());
     }
 }

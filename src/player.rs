@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use bevy_tnua::builtins::TnuaBuiltinDash;
 use bevy_tnua::{prelude::*, TnuaAnimatingState, TnuaAnimatingStateDirective};
 use bevy_tnua_rapier2d::{TnuaRapier2dIOBundle, TnuaRapier2dSensorShape};
 use bevy_yoleck::prelude::*;
@@ -114,6 +115,7 @@ pub enum PlayerAnimationState {
     Running(f32),
     Jumping,
     AirJumping,
+    Dashing,
 }
 
 fn animate_player(
@@ -135,6 +137,7 @@ fn animate_player(
             match controller.action_name() {
                 Some(TnuaBuiltinJump::NAME) => PlayerAnimationState::Jumping,
                 Some("air-jump") => PlayerAnimationState::AirJumping,
+                Some(TnuaBuiltinDash::NAME) => PlayerAnimationState::Dashing,
                 Some(name) => panic!("Unknown action {name}"),
                 None => {
                     let Some((_, walk_state)) = controller.concrete_basis::<TnuaBuiltinWalk>()
@@ -187,6 +190,12 @@ fn animate_player(
                         continue;
                     };
                     animation_player.play(clip.clone()).repeat().set_speed(3.0);
+                }
+                PlayerAnimationState::Dashing => {
+                    let Some(clip) = animations_owner.clips.get("Dash") else {
+                        continue;
+                    };
+                    animation_player.play(clip.clone());
                 }
             },
         }
