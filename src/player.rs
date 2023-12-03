@@ -3,7 +3,7 @@ use std::time::Duration;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use bevy_tnua::{prelude::*, TnuaAnimatingState, TnuaAnimatingStateDirective};
-use bevy_tnua_rapier2d::TnuaRapier2dIOBundle;
+use bevy_tnua_rapier2d::{TnuaRapier2dIOBundle, TnuaRapier2dSensorShape};
 use bevy_yoleck::prelude::*;
 use bevy_yoleck::vpeol::VpeolWillContainClickableChildren;
 use bevy_yoleck::vpeol_3d::Vpeol3dPosition;
@@ -82,7 +82,7 @@ fn populate_player(
         cmd.insert(TnuaControllerBundle::default());
         cmd.insert(TnuaRapier2dIOBundle::default());
         cmd.insert(LockedAxes::ROTATION_LOCKED);
-        // cmd.insert(TnuaRapier2dSensorShape(Collider::cuboid(0.45, 0.0)));
+        cmd.insert(TnuaRapier2dSensorShape(Collider::cuboid(0.45, 0.0)));
         cmd.insert(ActiveEvents::COLLISION_EVENTS);
         // cmd.insert(SolverGroups {
         // memberships: crate::solver_groups::PLAYER,
@@ -113,6 +113,7 @@ pub enum PlayerAnimationState {
     Standing,
     Running(f32),
     Jumping,
+    AirJumping,
 }
 
 fn animate_player(
@@ -133,6 +134,7 @@ fn animate_player(
         match animating_state.update_by_discriminant({
             match controller.action_name() {
                 Some(TnuaBuiltinJump::NAME) => PlayerAnimationState::Jumping,
+                Some("air-jump") => PlayerAnimationState::AirJumping,
                 Some(name) => panic!("Unknown action {name}"),
                 None => {
                     let Some((_, walk_state)) = controller.concrete_basis::<TnuaBuiltinWalk>()
@@ -179,6 +181,12 @@ fn animate_player(
                         continue;
                     };
                     animation_player.play(clip.clone()).set_speed(3.0);
+                }
+                PlayerAnimationState::AirJumping => {
+                    let Some(clip) = animations_owner.clips.get("AirJump") else {
+                        continue;
+                    };
+                    animation_player.play(clip.clone()).repeat().set_speed(3.0);
                 }
             },
         }

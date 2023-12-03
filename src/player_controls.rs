@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_tnua::control_helpers::TnuaSimpleAirActionsCounter;
 use bevy_tnua::prelude::*;
 use bevy_yoleck::prelude::*;
 use leafwing_input_manager::prelude::*;
@@ -44,7 +45,21 @@ fn add_controls_to_player(mut populate: YoleckPopulate<(), With<IsPlayer>>) {
                 input_map
             },
         });
+        cmd.insert(PlayerAirCounters::default());
     });
+}
+
+#[derive(Component, Default)]
+pub struct PlayerAirCounters {
+    jumps: TnuaSimpleAirActionsCounter,
+    // dashes: TnuaSimpleAirActionsCounter,
+}
+
+impl PlayerAirCounters {
+    fn update(&mut self, controller: &TnuaController) {
+        let Self { jumps } = self;
+        jumps.update(controller);
+    }
 }
 
 fn apply_controls(
@@ -52,9 +67,13 @@ fn apply_controls(
         &ActionState<PlayerAction>,
         &mut TnuaController,
         &mut PlayerFacing,
+        &mut PlayerAirCounters,
     )>,
 ) {
-    for (input, mut controller, mut player_facing) in query.iter_mut() {
+    for (input, mut controller, mut player_facing, mut air_counters) in query.iter_mut() {
+        let controller = controller.as_mut();
+        air_counters.update(controller);
+
         let desired_velocity = if let Some(axis_pair) = input.clamped_axis_pair(PlayerAction::Run) {
             if axis_pair.x() <= -0.1 {
                 *player_facing = PlayerFacing::Left;
@@ -70,35 +89,29 @@ fn apply_controls(
             float_height: 1.5,
             cling_distance: 0.5,
             up: Vec3::Y,
-            // spring_strengh: todo!(),
-            // spring_dampening: todo!(),
-            // acceleration: todo!(),
-            // air_acceleration: todo!(),
-            // coyote_time: todo!(),
-            // free_fall_extra_gravity: todo!(),
-            // tilt_offset_angvel: todo!(),
-            // tilt_offset_angacl: todo!(),
-            // turning_angvel: todo!(),
             ..Default::default()
         });
         if let Some(jump) = Some(input.clamped_value(PlayerAction::Jump)).filter(|jump| 0.0 < *jump)
         {
-            controller.action(TnuaBuiltinJump {
-                height: 5.0 * jump,
-                // allow_in_air: todo!(),
-                // upslope_extra_gravity: todo!(),
-                // takeoff_extra_gravity: todo!(),
-                // takeoff_above_velocity: todo!(),
-                // fall_extra_gravity: todo!(),
-                // shorten_extra_gravity: todo!(),
-                // peak_prevention_at_upward_velocity: todo!(),
-                // peak_prevention_extra_gravity: todo!(),
-                // reschedule_cooldown: todo!(),
-                // input_buffer_time: todo!(),
-                ..Default::default()
-            });
+            match air_counters.jumps.air_count_for(TnuaBuiltinJump::NAME) {
+                1 => {
+                    controller.named_action(
+                        "air-jump",
+                        TnuaBuiltinJump {
+                            height: 4.0 * jump,
+                            allow_in_air: true,
+                            ..Default::default()
+                        },
+                    );
+                }
+                _ => {
+                    controller.action(TnuaBuiltinJump {
+                        height: 5.0 * jump,
+                        allow_in_air: false,
+                        ..Default::default()
+                    });
+                }
+            }
         }
-        // = Some(input.clamped_value(PlayerAction::Jump)).filter(|jump| 0.0 < *jump);
-        // controls.jump = Some(input.clamped_value(PlayerAction::Jump)).filter(|jump| 0.0 < *jump);
     }
 }
