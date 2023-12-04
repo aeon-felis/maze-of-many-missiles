@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy_tnua::builtins::TnuaBuiltinDash;
-use bevy_tnua::control_helpers::TnuaSimpleAirActionsCounter;
+use bevy_tnua::control_helpers::TnuaAirActionsTracker;
 use bevy_tnua::prelude::*;
 use bevy_yoleck::prelude::*;
 use leafwing_input_manager::prelude::*;
@@ -53,16 +53,67 @@ fn add_controls_to_player(mut populate: YoleckPopulate<(), With<IsPlayer>>) {
     });
 }
 
+#[derive(Default)]
+enum CurrentAirAction {
+    #[default]
+    None,
+    Jump,
+    Dash,
+}
+
 #[derive(Component, Default)]
-pub struct PlayerAirCounters {
-    jumps: TnuaSimpleAirActionsCounter,
-    // dashes: TnuaSimpleAirActionsCounter,
+struct PlayerAirCounters {
+    tracker: TnuaAirActionsTracker,
+    current: CurrentAirAction,
+    jumps: usize,
+    dashes: usize,
 }
 
 impl PlayerAirCounters {
     fn update(&mut self, controller: &TnuaController) {
-        let Self { jumps } = self;
-        jumps.update(controller);
+        match self.tracker.update(controller) {
+            bevy_tnua::control_helpers::TnuaAirActionsUpdate::NoChange => {}
+            bevy_tnua::control_helpers::TnuaAirActionsUpdate::FreeFallStarted => {
+                self.current = CurrentAirAction::None;
+            }
+            bevy_tnua::control_helpers::TnuaAirActionsUpdate::AirActionStarted(action) => {
+                match action {
+                    TnuaBuiltinJump::NAME | "air-jump" => {
+                        self.current = CurrentAirAction::Jump;
+                        self.jumps += 1;
+                    }
+                    TnuaBuiltinDash::NAME => {
+                        self.current = CurrentAirAction::Dash;
+                        self.dashes += 1;
+                    }
+                    _ => {}
+                }
+            }
+            bevy_tnua::control_helpers::TnuaAirActionsUpdate::ActionFinishedInAir => {
+                self.current = CurrentAirAction::None;
+            }
+            bevy_tnua::control_helpers::TnuaAirActionsUpdate::JustLanded => {
+                self.current = CurrentAirAction::None;
+                self.jumps = 0;
+                self.dashes = 0;
+            }
+        }
+    }
+
+    fn jump_count(&self) -> usize {
+        if matches!(self.current, CurrentAirAction::Jump) {
+            self.jumps - 1
+        } else {
+            self.jumps
+        }
+    }
+
+    fn dash_count(&self) -> usize {
+        if matches!(self.current, CurrentAirAction::Dash) {
+            self.dashes - 1
+        } else {
+            self.dashes
+        }
     }
 }
 
@@ -175,7 +226,7 @@ fn apply_controls(
         });
         if let Some(jump) = Some(input.clamped_value(PlayerAction::Jump)).filter(|jump| 0.0 < *jump)
         {
-            match air_counters.jumps.air_count_for(TnuaBuiltinJump::NAME) {
+            match air_counters.jump_count() {
                 1 => {
                     controller.named_action(
                         "air-jump",
@@ -204,9 +255,9 @@ fn apply_controls(
                 controller.action(TnuaBuiltinDash {
                     displacement: 10.0 * direction_x * Vec3::X,
                     // desired_forward: todo!(),
-                    allow_in_air: true,
+                    allow_in_air: air_counters.dash_count() < 1,
                     speed: 120.0,
-                    // brake_to_speed: todo!(),
+                    brake_to_speed: 40.0,
                     acceleration: 800.0,
                     // brake_acceleration: todo!(),
                     // input_buffer_time: todo!(),
@@ -214,6 +265,5 @@ fn apply_controls(
                 });
             }
         }
-        // }, double_click_inputs.right.is_active());
     }
 }
