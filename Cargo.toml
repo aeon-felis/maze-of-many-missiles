@@ -24,4 +24,5 @@ bevy-yoleck = { version = "0.17.0", features = ["vpeol_3d"] }
 bevy_egui = "0.23.0"
 bevy_rapier2d = "0.23.0"
 clap = { version = "4.4.10", features = ["derive"] }
+dolly = "0.4.2"
 leafwing-input-manager = "0.11.2"
