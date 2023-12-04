@@ -20,8 +20,6 @@ impl Plugin for PlayerPlugin {
             YoleckEntityType::new("Player")
                 .with::<Vpeol3dPosition>()
                 .insert_on_init(|| IsPlayer)
-            //.insert_on_init(|| Vpeol3dRotatation(Quat::from_rotation_y(PI)))
-            //.insert_on_init_during_editor(|| SnapToGrid)
         });
         app.add_systems(YoleckSchedule::Populate, populate_player);
         app.add_systems(

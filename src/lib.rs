@@ -1,6 +1,7 @@
 mod animating;
 mod arena;
 mod camera;
+mod cannon;
 mod level_handling;
 mod menu;
 mod player;
@@ -13,6 +14,7 @@ use bevy_yoleck::prelude::*;
 use self::animating::AnimatingPlugin;
 use self::arena::ArenaPlugin;
 use self::camera::MazeOfManyMissilesCameraPlugin;
+use self::cannon::CannonPlugin;
 use self::level_handling::{LevelHandlingPlugin, LevelProgress};
 use self::menu::MenuPlugin;
 use self::player::PlayerPlugin;
@@ -48,19 +50,6 @@ impl Plugin for MazeOfManyMissilesPlugin {
                 } else {
                     format!("{}.yol", start_at_level)
                 };
-                //app.add_systems(
-                //Startup,
-                //move |mut commands: Commands,
-                //asset_server: Res<AssetServer>,
-                //mut state: ResMut<NextState<AppState>>| {
-                //// TODO: replace this system with a `LevelProgress` based system (or whatever
-                //// I'll use for level progress)
-                //commands.spawn(YoleckLoadLevel(
-                //asset_server.load(format!("levels/{start_at_level}")),
-                //));
-                //state.set(AppState::Game);
-                //},
-                //);
                 app.add_systems(
                     Startup,
                     move |mut level_progress: ResMut<LevelProgress>,
@@ -75,6 +64,7 @@ impl Plugin for MazeOfManyMissilesPlugin {
         app.add_plugins(PlayerPlugin);
         app.add_plugins(ArenaPlugin);
         app.add_plugins(PlayerControlsPlugin);
+        app.add_plugins(CannonPlugin);
         //app.add_plugins(FloatingTextPlugin);
 
         app.add_systems(Update, enable_disable_physics);

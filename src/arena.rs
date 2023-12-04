@@ -119,7 +119,7 @@ fn rotate_block(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut mesh_and_material: Local<Option<(Handle<Mesh>, Handle<StandardMaterial>)>>,
 ) {
-    let Ok((mut rotatation, scale, position)) = edit.get_single_mut() else {
+    let Ok((mut rotation, scale, position)) = edit.get_single_mut() else {
         return;
     };
 
@@ -146,7 +146,7 @@ fn rotate_block(
     .enumerate()
     {
         let offset = 0.5 * knob_direction * scale.0.truncate();
-        let rotated_offset = rotatation.0 * offset.extend(0.0);
+        let rotated_offset = rotation.0 * offset.extend(0.0);
         let mut knob = knobs.knob(("rotate-marker", i));
         if knob.is_new {
             knob.cmd.insert(PbrBundle {
@@ -163,7 +163,7 @@ fn rotate_block(
                 .truncate()
                 .normalize_or_zero();
             let new_rotation = Quat::from_rotation_arc_2d(knob_direction, desired_direction);
-            rotatation.0 = new_rotation;
+            rotation.0 = new_rotation;
         }
     }
 }
