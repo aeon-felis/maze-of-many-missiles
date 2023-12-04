@@ -160,7 +160,7 @@ impl DoubleClickDetector {
                 *self = Self::Active;
             }
             Self::Pending(duration) => {
-                *self = if duration.as_secs_f64() < 0.3 {
+                *self = if duration.as_secs_f64() < 0.1 {
                     Self::Active
                 } else {
                     Self::Pressed
