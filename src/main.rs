@@ -7,6 +7,7 @@
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_egui_kbgp::{KbgpNavBindings, KbgpNavCommand, KbgpPlugin, KbgpSettings};
+use bevy_pkv::PkvStore;
 use bevy_rapier2d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_tnua::controller::TnuaControllerPlugin;
 use bevy_tnua_rapier2d::TnuaRapier2dPlugin;
@@ -35,6 +36,8 @@ fn main() {
         }),
         ..Default::default()
     }));
+
+    app.insert_resource(PkvStore::new("AeonFelis", "MazeOfManyMissiles"));
 
     app.add_plugins(EguiPlugin);
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());

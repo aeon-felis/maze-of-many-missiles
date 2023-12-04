@@ -22,6 +22,7 @@ bevy-tnua = "0.13.0"
 bevy-tnua-rapier2d = "0.1.0"
 bevy-yoleck = { version = "0.17.0", features = ["vpeol_3d"] }
 bevy_egui = "0.23.0"
+bevy_pkv = { version = "0.9.0", default-features = false, features = ["bevy", "sled"] }
 bevy_rapier2d = "0.23.0"
 clap = { version = "4.4.10", features = ["derive"] }
 dolly = "0.4.2"

@@ -1,6 +1,8 @@
 mod animating;
 mod arena;
 mod camera;
+mod level_handling;
+mod menu;
 mod player;
 mod player_controls;
 
@@ -11,6 +13,8 @@ use bevy_yoleck::prelude::*;
 use self::animating::AnimatingPlugin;
 use self::arena::ArenaPlugin;
 use self::camera::MazeOfManyMissilesCameraPlugin;
+use self::level_handling::{LevelHandlingPlugin, LevelProgress};
+use self::menu::MenuPlugin;
 use self::player::PlayerPlugin;
 use self::player_controls::PlayerControlsPlugin;
 
@@ -36,35 +40,35 @@ impl Plugin for MazeOfManyMissilesPlugin {
                 when_game: AppState::Game,
             });
         } else {
-            //app.add_plugins(MenuPlugin);
-            //app.add_plugins(LevelHandlingPlugin);
+            app.add_plugins(MenuPlugin);
+            app.add_plugins(LevelHandlingPlugin);
             if let Some(start_at_level) = &self.start_at_level {
                 let start_at_level = if start_at_level.ends_with(".yol") {
                     start_at_level.clone()
                 } else {
                     format!("{}.yol", start_at_level)
                 };
-                app.add_systems(
-                    Startup,
-                    move |mut commands: Commands,
-                          asset_server: Res<AssetServer>,
-                          mut state: ResMut<NextState<AppState>>| {
-                        // TODO: replace this system with a `LevelProgress` based system (or whatever
-                        // I'll use for level progress)
-                        commands.spawn(YoleckLoadLevel(
-                            asset_server.load(format!("levels/{start_at_level}")),
-                        ));
-                        state.set(AppState::Game);
-                    },
-                );
                 //app.add_systems(
                 //Startup,
-                //move |mut level_progress: ResMut<LevelProgress>,
-                //mut app_state: ResMut<NextState<AppState>>| {
-                //level_progress.current_level = Some(start_at_level.clone());
-                //app_state.set(AppState::LoadLevel);
+                //move |mut commands: Commands,
+                //asset_server: Res<AssetServer>,
+                //mut state: ResMut<NextState<AppState>>| {
+                //// TODO: replace this system with a `LevelProgress` based system (or whatever
+                //// I'll use for level progress)
+                //commands.spawn(YoleckLoadLevel(
+                //asset_server.load(format!("levels/{start_at_level}")),
+                //));
+                //state.set(AppState::Game);
                 //},
                 //);
+                app.add_systems(
+                    Startup,
+                    move |mut level_progress: ResMut<LevelProgress>,
+                          mut app_state: ResMut<NextState<AppState>>| {
+                        level_progress.current_level = Some(start_at_level.clone());
+                        app_state.set(AppState::LoadLevel);
+                    },
+                );
             }
         }
         app.add_plugins(AnimatingPlugin);
