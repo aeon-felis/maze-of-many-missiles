@@ -12,10 +12,7 @@ impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LaunchMissile>();
         app.add_systems(Update, launch_missiles);
-        app.add_systems(
-            Update,
-            (propel_missiles, direct_missiles).in_set(During::Gameplay),
-        );
+        app.add_systems(Update, control_missiles.in_set(During::Gameplay));
     }
 }
 
@@ -55,7 +52,7 @@ fn launch_missiles(
             speed: 30.0,
             acceleration: 400.0,
             angular_speed: 5.0,
-            angular_acceleration: 100.0,
+            angular_acceleration: 200.0,
         });
 
         cmd.insert(RigidBody::Dynamic);
@@ -64,23 +61,7 @@ fn launch_missiles(
     }
 }
 
-fn propel_missiles(
-    time: Res<Time>,
-    mut query: Query<(&MissileConfig, &mut Velocity, &GlobalTransform)>,
-) {
-    for (missile_config, mut velocity, transform) in query.iter_mut() {
-        let direction = transform.right().truncate();
-        let current_speed = velocity.linvel.dot(direction);
-        let additional_speed_required = missile_config.speed - current_speed;
-        if 0.0 < additional_speed_required {
-            let boost =
-                additional_speed_required.min(missile_config.acceleration * time.delta_seconds());
-            velocity.linvel += boost * direction;
-        }
-    }
-}
-
-fn direct_missiles(
+fn control_missiles(
     time: Res<Time>,
     player_query: Query<&GlobalTransform, With<IsPlayer>>,
     mut missiles_query: Query<(&MissileConfig, &mut Velocity, &GlobalTransform)>,
@@ -114,5 +95,15 @@ fn direct_missiles(
         let maximum_impulse = missile_config.angular_acceleration * time.delta_seconds();
         let angular_impulse = angular_velocity_diff.clamp(-maximum_impulse, maximum_impulse);
         velocity.angvel += angular_impulse;
+
+        let direction = transform.right().truncate();
+        let current_speed = velocity.linvel.dot(direction);
+        let additional_speed_required = missile_config.speed - current_speed;
+        if 0.0 < additional_speed_required {
+            let homing_ratio = angle_diff.abs() / std::f32::consts::PI;
+            let boost =
+                additional_speed_required.min(homing_ratio * missile_config.acceleration * time.delta_seconds());
+            velocity.linvel += boost * direction;
+        }
     }
 }
