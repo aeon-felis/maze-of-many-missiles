@@ -11,6 +11,7 @@ use bevy_pkv::PkvStore;
 use bevy_rapier2d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_tnua::controller::TnuaControllerPlugin;
 use bevy_tnua_rapier2d::TnuaRapier2dPlugin;
+use bevy_turborand::prelude::RngPlugin;
 use bevy_yoleck::vpeol_3d::{Vpeol3dPluginForEditor, Vpeol3dPluginForGame};
 use bevy_yoleck::{YoleckPluginForEditor, YoleckPluginForGame};
 use clap::Parser;
@@ -38,6 +39,8 @@ fn main() {
     }));
 
     app.insert_resource(PkvStore::new("AeonFelis", "MazeOfManyMissiles"));
+
+    app.add_plugins(RngPlugin::default());
 
     app.add_plugins(EguiPlugin);
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());

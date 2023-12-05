@@ -29,7 +29,7 @@ fn setup_camera(mut commands: Commands) {
     cmd.insert(CameraController(
         CameraRig::builder()
             .with(Position::default())
-            .with(Arm::new(Vec3::new(0.0, 10.0, 30.0)))
+            .with(Arm::new(Vec3::new(0.0, 10.0, 50.0)))
             .with(Smooth::new_position(1.0))
             .with(LookAt::new(Vec3::ZERO).tracking_smoothness(0.5))
             .build(),

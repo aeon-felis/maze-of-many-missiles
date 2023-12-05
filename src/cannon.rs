@@ -1,7 +1,11 @@
 use bevy::prelude::*;
+use bevy_turborand::{DelegatedRng, GlobalRng};
 use bevy_yoleck::prelude::*;
 use bevy_yoleck::vpeol::VpeolWillContainClickableChildren;
 use bevy_yoleck::vpeol_3d::{Vpeol3dPosition, Vpeol3dRotatation};
+
+use crate::missile::LaunchMissile;
+use crate::During;
 
 pub struct CannonPlugin;
 
@@ -15,16 +19,21 @@ impl Plugin for CannonPlugin {
         });
 
         app.add_systems(YoleckSchedule::Populate, populate_cannon);
-        app.add_yoleck_edit_system(edit_cannon_direction)
+        app.add_yoleck_edit_system(edit_cannon_direction);
+        app.add_systems(Update, cannons_fire_missiles.in_set(During::Gameplay));
     }
 }
 
 #[derive(Component)]
 pub struct IsCannon;
 
+#[derive(Component)]
+pub struct FireEvery(Timer);
+
 fn populate_cannon(
     mut populate: YoleckPopulate<(), With<IsCannon>>,
     asset_server: Res<AssetServer>,
+    mut rng: ResMut<GlobalRng>,
 ) {
     populate.populate(|ctx, mut cmd, ()| {
         if ctx.is_first_time() {
@@ -33,6 +42,11 @@ fn populate_cannon(
                 scene: asset_server.load("Cannon.glb#Scene0"),
                 ..Default::default()
             });
+        }
+        if !ctx.is_in_editor() {
+            let mut timer = Timer::from_seconds(0.5, TimerMode::Repeating);
+            timer.tick(timer.duration().mul_f32(rng.f32()));
+            cmd.insert(FireEvery(timer));
         }
     });
 }
@@ -81,6 +95,23 @@ fn edit_cannon_direction(
                 .normalize_or_zero();
             let new_rotation = Quat::from_rotation_arc(Vec3::NEG_Z, desired_direction.extend(0.0));
             cannon_rotation.0 = new_rotation;
+        }
+    }
+}
+
+fn cannons_fire_missiles(
+    time: Res<Time>,
+    mut query: Query<(&mut FireEvery, &GlobalTransform, &YoleckBelongsToLevel)>,
+    mut writer: EventWriter<LaunchMissile>,
+) {
+    for (mut fire_every, transform, belongs_to_level) in query.iter_mut() {
+        if fire_every.0.tick(time.delta()).just_finished() {
+            let direction = transform.forward().truncate().normalize_or_zero();
+            writer.send(LaunchMissile {
+                level: belongs_to_level.level,
+                position: transform.translation().truncate() + direction * 1.5,
+                direction,
+            });
         }
     }
 }
