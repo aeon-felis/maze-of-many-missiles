@@ -4,6 +4,7 @@
 // Feel free to delete this line.
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
+use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_egui_kbgp::{KbgpNavBindings, KbgpNavCommand, KbgpPlugin, KbgpSettings};
@@ -37,6 +38,10 @@ fn main() {
         }),
         ..Default::default()
     }));
+
+    // Without this, WASM builds on Itch.io will try to access the non-existing .meta files and
+    // fail on 403.
+    app.insert_resource(AssetMetaCheck::Never);
 
     app.insert_resource(PkvStore::new("AeonFelis", "MazeOfManyMissiles"));
 
