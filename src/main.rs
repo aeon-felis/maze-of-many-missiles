@@ -30,6 +30,12 @@ fn main() {
     let args = Args::parse();
 
     let mut app = App::new();
+
+    // Without this, WASM builds on Itch.io will try to access the non-existing .meta files and
+    // fail on 403.
+    // NOTE: this must come before the DefaultPlugins are registered.
+    app.insert_resource(AssetMetaCheck::Never);
+
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
             title: "Maze of Many Missiles".to_owned(),
@@ -38,10 +44,6 @@ fn main() {
         }),
         ..Default::default()
     }));
-
-    // Without this, WASM builds on Itch.io will try to access the non-existing .meta files and
-    // fail on 403.
-    app.insert_resource(AssetMetaCheck::Never);
 
     app.insert_resource(PkvStore::new("AeonFelis", "MazeOfManyMissiles"));
 
