@@ -4,6 +4,7 @@ use bevy_yoleck::YoleckBelongsToLevel;
 use ordered_float::OrderedFloat;
 
 use crate::player::IsPlayer;
+use crate::utils::collision_started_events_both_ways;
 use crate::During;
 
 pub struct MissilePlugin;
@@ -13,8 +14,12 @@ impl Plugin for MissilePlugin {
         app.add_event::<LaunchMissile>();
         app.add_systems(Update, launch_missiles);
         app.add_systems(Update, control_missiles.in_set(During::Gameplay));
+        app.add_systems(Update, explode_missiles_on_impact);
     }
 }
+
+#[derive(Component)]
+pub struct ExplodesMissileOnImpact;
 
 #[derive(Component)]
 struct MissileConfig {
@@ -55,9 +60,12 @@ fn launch_missiles(
             angular_acceleration: 200.0,
         });
 
-        cmd.insert(RigidBody::Dynamic);
-        cmd.insert(Collider::capsule_x(2.0, 0.25));
-        cmd.insert(Velocity::linear(event.direction * 30.0));
+        cmd.insert((
+            RigidBody::Dynamic,
+            Collider::capsule_x(2.0, 0.25),
+            Velocity::linear(event.direction * 30.0),
+            ActiveEvents::COLLISION_EVENTS,
+        ));
     }
 }
 
@@ -101,9 +109,26 @@ fn control_missiles(
         let additional_speed_required = missile_config.speed - current_speed;
         if 0.0 < additional_speed_required {
             let homing_ratio = angle_diff.abs() / std::f32::consts::PI;
-            let boost =
-                additional_speed_required.min(homing_ratio * missile_config.acceleration * time.delta_seconds());
+            let boost = additional_speed_required
+                .min(homing_ratio * missile_config.acceleration * time.delta_seconds());
             velocity.linvel += boost * direction;
         }
+    }
+}
+
+fn explode_missiles_on_impact(
+    mut reader: EventReader<CollisionEvent>,
+    missile_query: Query<(&GlobalTransform, &YoleckBelongsToLevel), With<MissileConfig>>,
+    other_object_query: Query<(), With<ExplodesMissileOnImpact>>,
+    mut commands: Commands,
+) {
+    for (e1, e2) in collision_started_events_both_ways(&mut reader) {
+        if !other_object_query.contains(e2) {
+            continue;
+        }
+        let Ok((_transform, _belongs_to_level)) = missile_query.get(e1) else {
+            continue;
+        };
+        commands.entity(e1).despawn_recursive();
     }
 }

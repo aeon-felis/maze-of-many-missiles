@@ -3,6 +3,8 @@ use bevy_rapier2d::prelude::*;
 use bevy_yoleck::prelude::*;
 use bevy_yoleck::vpeol_3d::{Vpeol3dPosition, Vpeol3dRotatation, Vpeol3dScale};
 
+use crate::missile::ExplodesMissileOnImpact;
+
 pub struct ArenaPlugin;
 
 impl Plugin for ArenaPlugin {
@@ -12,7 +14,7 @@ impl Plugin for ArenaPlugin {
                 .with::<Vpeol3dPosition>()
                 .with::<Vpeol3dScale>()
                 .with::<Vpeol3dRotatation>()
-                .insert_on_init(|| IsBlock)
+                .insert_on_init(|| (IsBlock, ExplodesMissileOnImpact))
         });
 
         app.add_yoleck_edit_system(resize_block);

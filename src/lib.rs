@@ -7,6 +7,7 @@ mod menu;
 mod missile;
 mod player;
 mod player_controls;
+mod utils;
 
 use bevy::prelude::*;
 use bevy_rapier2d::plugin::RapierConfiguration;

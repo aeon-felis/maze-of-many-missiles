@@ -44,7 +44,7 @@ fn populate_cannon(
             });
         }
         if !ctx.is_in_editor() {
-            let mut timer = Timer::from_seconds(0.5, TimerMode::Once);
+            let mut timer = Timer::from_seconds(0.5, TimerMode::Repeating);
             timer.tick(timer.duration().mul_f32(rng.f32()));
             cmd.insert(FireEvery(timer));
         }
