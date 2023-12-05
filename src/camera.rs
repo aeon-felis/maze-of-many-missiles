@@ -20,7 +20,7 @@ struct CameraController(CameraRig);
 fn setup_camera(mut commands: Commands) {
     let mut cmd = commands.spawn_empty();
     cmd.insert(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 3.0, 30.0)
+        transform: Transform::from_xyz(0.0, 3.0, 100.0)
             .looking_to(Vec3::new(0.0, -3.0, -10.0), Vec3::Y),
         ..Default::default()
     });
@@ -29,7 +29,7 @@ fn setup_camera(mut commands: Commands) {
     cmd.insert(CameraController(
         CameraRig::builder()
             .with(Position::default())
-            .with(Arm::new(Vec3::new(0.0, 10.0, 50.0)))
+            .with(Arm::new(Vec3::new(0.0, 10.0, 100.0)))
             .with(Smooth::new_position(1.0))
             .with(LookAt::new(Vec3::ZERO).tracking_smoothness(0.5))
             .build(),
