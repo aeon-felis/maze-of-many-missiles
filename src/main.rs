@@ -39,7 +39,7 @@ fn main() {
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
             title: "Maze of Many Missiles".to_owned(),
-            resolution: (800.0, 600.0).into(),
+            resolution: (1280.0, 720.0).into(),
             ..Default::default()
         }),
         ..Default::default()
