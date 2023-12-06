@@ -56,8 +56,8 @@ fn launch_missiles(
         cmd.insert(MissileConfig {
             speed: 30.0,
             acceleration: 400.0,
-            angular_speed: 5.0,
-            angular_acceleration: 200.0,
+            angular_speed: 20.0,
+            angular_acceleration: 400.0,
         });
 
         cmd.insert((
@@ -65,6 +65,7 @@ fn launch_missiles(
             Collider::capsule_x(2.0, 0.25),
             Velocity::linear(event.direction * 30.0),
             ActiveEvents::COLLISION_EVENTS,
+            GravityScale(0.0),
         ));
     }
 }
@@ -92,7 +93,6 @@ fn control_missiles(
         let Some(direction_to_target) = vector_to_target.try_normalize() else {
             continue;
         };
-        // TODO: compensate for gravity?
         let angle_diff = -transform
             .right()
             .truncate()
@@ -109,9 +109,11 @@ fn control_missiles(
         let additional_speed_required = missile_config.speed - current_speed;
         if 0.0 < additional_speed_required {
             let homing_ratio = angle_diff.abs() / std::f32::consts::PI;
-            let boost = additional_speed_required
-                .min(homing_ratio * missile_config.acceleration * time.delta_seconds());
-            velocity.linvel += boost * direction;
+            if 0.8 < homing_ratio {
+                let boost = additional_speed_required
+                    .min(homing_ratio * missile_config.acceleration * time.delta_seconds());
+                velocity.linvel += boost * direction;
+            }
         }
     }
 }
