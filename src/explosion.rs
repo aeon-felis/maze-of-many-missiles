@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use bevy_yoleck::YoleckBelongsToLevel;
 
 use crate::utils::CachedPbrMaker;
@@ -10,7 +11,10 @@ impl Plugin for ExplosionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<StartExplosion>();
         app.add_systems(Update, start_explosions);
-        app.add_systems(Update, progress_explosion_lifetime.in_set(During::Gameplay));
+        app.add_systems(
+            Update,
+            (progress_explosion_lifetime, apply_explosion_force).in_set(During::Gameplay),
+        );
     }
 }
 
@@ -24,6 +28,9 @@ pub struct StartExplosion {
 struct ExplosionStatus {
     timer: Timer,
 }
+
+#[derive(Component)]
+pub struct PushableByExplosion;
 
 fn start_explosions(
     mut reader: EventReader<StartExplosion>,
@@ -86,8 +93,11 @@ fn start_explosions(
         cmd.insert(Transform::from_translation(event.position.extend(0.0)).with_scale(Vec3::ZERO));
         cmd.insert(YoleckBelongsToLevel { level: event.level });
 
+        cmd.insert(Collider::ball(1.0));
+        cmd.insert(Sensor);
+
         cmd.insert(ExplosionStatus {
-            timer: Timer::from_seconds(0.25, TimerMode::Once),
+            timer: Timer::from_seconds(0.30, TimerMode::Once),
         });
     }
 }
@@ -102,7 +112,36 @@ fn progress_explosion_lifetime(
             commands.entity(entity).despawn_recursive();
         } else {
             let progress = status.timer.elapsed_secs() / status.timer.duration().as_secs_f32();
-            transform.scale = 4.0 * progress.powf(0.125) * Vec3::ONE;
+            transform.scale = 6.0 * progress.powf(0.125) * Vec3::ONE;
+        }
+    }
+}
+
+fn apply_explosion_force(
+    time: Res<Time>,
+    explosions_query: Query<(Entity, &GlobalTransform), With<ExplosionStatus>>,
+    rapier_context: Res<RapierContext>,
+    mut pushables_query: Query<(&GlobalTransform, &mut Velocity), With<PushableByExplosion>>,
+) {
+    for (explosion_entity, explosion_transform) in explosions_query.iter() {
+        for (e1, e2, intersecting) in rapier_context.intersections_with(explosion_entity) {
+            if !intersecting {
+                continue;
+            }
+            let pushable_entity = if e1 == explosion_entity { e2 } else { e1 };
+            let Ok((pushable_transform, mut pushable_velocity)) =
+                pushables_query.get_mut(pushable_entity)
+            else {
+                continue;
+            };
+            let push_vector =
+                (pushable_transform.translation() - explosion_transform.translation()).truncate();
+            if push_vector.length_squared() == 0.0 {
+                continue;
+            }
+            let force_vector =
+                1000.0 * (push_vector / push_vector.length_squared()).clamp_length_max(10.0);
+            pushable_velocity.linvel += time.delta_seconds() * force_vector;
         }
     }
 }

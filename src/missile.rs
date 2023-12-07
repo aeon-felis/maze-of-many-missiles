@@ -3,7 +3,7 @@ use bevy_rapier2d::prelude::*;
 use bevy_yoleck::YoleckBelongsToLevel;
 use ordered_float::OrderedFloat;
 
-use crate::explosion::StartExplosion;
+use crate::explosion::{PushableByExplosion, StartExplosion};
 use crate::player::IsPlayer;
 use crate::utils::collision_started_events_both_ways;
 use crate::During;
@@ -60,6 +60,7 @@ fn launch_missiles(
             angular_speed: 20.0,
             angular_acceleration: 400.0,
         });
+        cmd.insert(PushableByExplosion);
 
         cmd.insert((
             RigidBody::Dynamic,

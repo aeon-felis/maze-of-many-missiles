@@ -10,6 +10,7 @@ use bevy_yoleck::vpeol::VpeolWillContainClickableChildren;
 use bevy_yoleck::vpeol_3d::Vpeol3dPosition;
 
 use crate::animating::{AnimationsOwner, GetClipsFrom};
+use crate::explosion::PushableByExplosion;
 use crate::During;
 
 pub struct PlayerPlugin;
@@ -89,6 +90,7 @@ fn populate_player(
         // });
 
         cmd.insert(PlayerFacing::Right);
+        cmd.insert(PushableByExplosion);
 
         // cmd.insert(Killable::default());
         cmd.insert(TnuaAnimatingState::<PlayerAnimationState>::default());
