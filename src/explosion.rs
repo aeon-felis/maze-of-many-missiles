@@ -101,7 +101,8 @@ fn progress_explosion_lifetime(
         if status.timer.tick(time.delta()).finished() {
             commands.entity(entity).despawn_recursive();
         } else {
-            transform.scale = (20.0 * status.timer.elapsed_secs()) * Vec3::ONE;
+            let progress = status.timer.elapsed_secs() / status.timer.duration().as_secs_f32();
+            transform.scale = 4.0 * progress.powf(0.125) * Vec3::ONE;
         }
     }
 }
