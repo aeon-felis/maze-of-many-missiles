@@ -4,6 +4,7 @@ use bevy_yoleck::prelude::*;
 use bevy_yoleck::vpeol_3d::{Vpeol3dPosition, Vpeol3dRotatation, Vpeol3dScale};
 
 use crate::missile::ExplodesMissileOnImpact;
+use crate::utils::CachedPbrMaker;
 
 pub struct ArenaPlugin;
 
@@ -27,27 +28,13 @@ impl Plugin for ArenaPlugin {
 #[derive(Component)]
 pub struct IsBlock;
 
-fn populate_block(
-    mut populate: YoleckPopulate<(), With<IsBlock>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut mesh_and_material: Local<Option<(Handle<Mesh>, Handle<StandardMaterial>)>>,
-) {
+fn populate_block(mut populate: YoleckPopulate<(), With<IsBlock>>, mut pbr: CachedPbrMaker) {
     populate.populate(|ctx, mut cmd, ()| {
         if ctx.is_first_time() {
-            let (mesh, material) = mesh_and_material
-                .get_or_insert_with(|| {
-                    (
-                        meshes.add(Mesh::from(shape::Box::new(1.0, 1.0, 1.0))),
-                        materials.add(Color::GRAY.into()),
-                    )
-                })
-                .clone();
-            cmd.insert(PbrBundle {
-                mesh,
-                material,
-                ..Default::default()
-            });
+            cmd.insert(pbr.make_pbr_with(
+                || Mesh::from(shape::Box::new(1.0, 1.0, 1.0)),
+                || Color::GRAY.into(),
+            ));
             cmd.insert(RigidBody::Fixed);
             cmd.insert(Collider::cuboid(0.5, 0.5));
         }
@@ -60,22 +47,16 @@ fn resize_block(
         With<IsBlock>,
     >,
     mut knobs: YoleckKnobs,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut mesh_and_material: Local<Option<(Handle<Mesh>, Handle<StandardMaterial>)>>,
+    mut pbr: CachedPbrMaker,
 ) {
     let Ok((rotation, mut scale, mut position)) = edit.get_single_mut() else {
         return;
     };
 
-    let (knob_mesh, knob_material) = mesh_and_material
-        .get_or_insert_with(|| {
-            (
-                meshes.add(Mesh::from(shape::Box::new(0.4, 0.4, 1.1))),
-                materials.add(Color::ORANGE.into()),
-            )
-        })
-        .clone();
+    let knob_pbr = pbr.make_pbr_with(
+        || Mesh::from(shape::Box::new(0.4, 0.4, 1.1)),
+        || Color::ORANGE.into(),
+    );
 
     for (i, diagonal) in [
         Vec2::new(1.0, 1.0),
@@ -89,11 +70,7 @@ fn resize_block(
         let offset = 0.5 * diagonal * scale.0.truncate();
         let mut knob = knobs.knob(("resize-marker", i));
         if knob.is_new {
-            knob.cmd.insert(PbrBundle {
-                mesh: knob_mesh.clone(),
-                material: knob_material.clone(),
-                ..Default::default()
-            });
+            knob.cmd.insert(knob_pbr.clone());
         }
         knob.cmd.insert(Transform::from_translation(
             position.0 + rotation.0 * offset.extend(0.0),
@@ -117,26 +94,22 @@ fn rotate_block(
         With<IsBlock>,
     >,
     mut knobs: YoleckKnobs,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut mesh_and_material: Local<Option<(Handle<Mesh>, Handle<StandardMaterial>)>>,
+    mut pbr: CachedPbrMaker,
 ) {
     let Ok((mut rotation, scale, position)) = edit.get_single_mut() else {
         return;
     };
 
-    let (knob_mesh, knob_material) = mesh_and_material
-        .get_or_insert_with(|| {
-            (
-                meshes.add(Mesh::from(shape::UVSphere {
-                    radius: 0.4,
-                    sectors: 10,
-                    stacks: 10,
-                })),
-                materials.add(Color::GREEN.into()),
-            )
-        })
-        .clone();
+    let knob_pbr = pbr.make_pbr_with(
+        || {
+            Mesh::from(shape::UVSphere {
+                radius: 0.4,
+                sectors: 10,
+                stacks: 10,
+            })
+        },
+        || Color::GREEN.into(),
+    );
 
     for (i, knob_direction) in [
         Vec2::new(1.0, 0.0),
@@ -151,11 +124,7 @@ fn rotate_block(
         let rotated_offset = rotation.0 * offset.extend(0.0);
         let mut knob = knobs.knob(("rotate-marker", i));
         if knob.is_new {
-            knob.cmd.insert(PbrBundle {
-                mesh: knob_mesh.clone(),
-                material: knob_material.clone(),
-                ..Default::default()
-            });
+            knob.cmd.insert(knob_pbr.clone());
         }
         knob.cmd
             .insert(Transform::from_translation(position.0 + rotated_offset));

@@ -3,6 +3,7 @@ use bevy_rapier2d::prelude::*;
 use bevy_yoleck::YoleckBelongsToLevel;
 use ordered_float::OrderedFloat;
 
+use crate::explosion::StartExplosion;
 use crate::player::IsPlayer;
 use crate::utils::collision_started_events_both_ways;
 use crate::During;
@@ -123,14 +124,19 @@ fn explode_missiles_on_impact(
     missile_query: Query<(&GlobalTransform, &YoleckBelongsToLevel), With<MissileConfig>>,
     other_object_query: Query<(), With<ExplodesMissileOnImpact>>,
     mut commands: Commands,
+    mut explosion_writer: EventWriter<StartExplosion>,
 ) {
     for (e1, e2) in collision_started_events_both_ways(&mut reader) {
         if !other_object_query.contains(e2) {
             continue;
         }
-        let Ok((_transform, _belongs_to_level)) = missile_query.get(e1) else {
+        let Ok((transform, belongs_to_level)) = missile_query.get(e1) else {
             continue;
         };
         commands.entity(e1).despawn_recursive();
+        explosion_writer.send(StartExplosion {
+            level: belongs_to_level.level,
+            position: transform.translation().truncate(),
+        })
     }
 }

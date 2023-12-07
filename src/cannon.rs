@@ -5,6 +5,7 @@ use bevy_yoleck::vpeol::VpeolWillContainClickableChildren;
 use bevy_yoleck::vpeol_3d::{Vpeol3dPosition, Vpeol3dRotatation};
 
 use crate::missile::LaunchMissile;
+use crate::utils::CachedPbrMaker;
 use crate::During;
 
 pub struct CannonPlugin;
@@ -54,9 +55,7 @@ fn populate_cannon(
 fn edit_cannon_direction(
     mut edit: YoleckEdit<(Entity, &mut Vpeol3dRotatation, &Vpeol3dPosition), With<IsCannon>>,
     mut knobs: YoleckKnobs,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut mesh_and_material: Local<Option<(Handle<Mesh>, Handle<StandardMaterial>)>>,
+    mut pbr: CachedPbrMaker,
 ) {
     for (cannon_entity, mut cannon_rotation, cannon_position) in edit.iter_matching_mut() {
         let unnormalized_direction = (cannon_rotation.0 * Vec3::NEG_Z).truncate();
@@ -68,23 +67,16 @@ fn edit_cannon_direction(
         let mut knob = knobs.knob(("cannon-direction", cannon_entity));
 
         if knob.is_new {
-            let (knob_mesh, knob_material) = mesh_and_material
-                .get_or_insert_with(|| {
-                    (
-                        meshes.add(Mesh::from(shape::UVSphere {
-                            radius: 0.4,
-                            sectors: 10,
-                            stacks: 10,
-                        })),
-                        materials.add(Color::PINK.into()),
-                    )
-                })
-                .clone();
-            knob.cmd.insert(PbrBundle {
-                mesh: knob_mesh,
-                material: knob_material,
-                ..Default::default()
-            });
+            knob.cmd.insert(pbr.make_pbr_with(
+                || {
+                    Mesh::from(shape::UVSphere {
+                        radius: 0.4,
+                        sectors: 10,
+                        stacks: 10,
+                    })
+                },
+                || Color::PINK.into(),
+            ));
         }
         knob.cmd.insert(Transform::from_translation(
             cannon_position.0 + 2.0 * direction.extend(0.0),
