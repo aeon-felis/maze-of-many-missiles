@@ -2,6 +2,7 @@ mod animating;
 mod arena;
 mod camera;
 mod cannon;
+mod door;
 mod explosion;
 mod level_handling;
 mod menu;
@@ -18,6 +19,7 @@ use self::animating::AnimatingPlugin;
 use self::arena::ArenaPlugin;
 use self::camera::MazeOfManyMissilesCameraPlugin;
 use self::cannon::CannonPlugin;
+use self::door::DoorPlugin;
 use self::explosion::ExplosionPlugin;
 use self::level_handling::{LevelHandlingPlugin, LevelProgress};
 use self::menu::MenuPlugin;
@@ -72,6 +74,7 @@ impl Plugin for MazeOfManyMissilesPlugin {
         app.add_plugins(CannonPlugin);
         app.add_plugins(MissilePlugin);
         app.add_plugins(ExplosionPlugin);
+        app.add_plugins(DoorPlugin);
         //app.add_plugins(FloatingTextPlugin);
 
         app.add_systems(Update, enable_disable_physics);

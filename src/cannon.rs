@@ -96,6 +96,9 @@ fn cannons_fire_missiles(
     mut query: Query<(&mut FireEvery, &GlobalTransform, &YoleckBelongsToLevel)>,
     mut writer: EventWriter<LaunchMissile>,
 ) {
+    if true {
+        return;
+    }
     for (mut fire_every, transform, belongs_to_level) in query.iter_mut() {
         if fire_every.0.tick(time.delta()).just_finished() {
             let direction = transform.forward().truncate().normalize_or_zero();
