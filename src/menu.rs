@@ -123,7 +123,7 @@ fn menu_header(mut frame_ui: ResMut<FrameUi>) {
         0.0,
         egui::TextFormat {
             font_id: egui::FontId {
-                size: 32.0,
+                size: 60.0,
                 family: egui::FontFamily::Proportional,
             },
             color: egui::Color32::WHITE,
