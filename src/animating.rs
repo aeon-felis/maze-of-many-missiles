@@ -30,14 +30,16 @@ pub struct GetClipsFrom(pub Handle<Gltf>);
 pub struct InitialAnimation {
     player_name: String,
     clip_name: String,
+    speed: f32,
 }
 
 #[allow(dead_code)]
 impl InitialAnimation {
-    pub fn new(player_name: impl ToString, clip_name: impl ToString) -> Self {
+    pub fn new(player_name: impl ToString, clip_name: impl ToString, speed: f32) -> Self {
         Self {
             player_name: player_name.to_string(),
             clip_name: clip_name.to_string(),
+            speed,
         }
     }
 }
@@ -93,7 +95,10 @@ fn set_initial_animation(
         let Ok(mut animation_player) = animation_players_query.get_mut(*animation_player) else {
             continue;
         };
-        animation_player.play(animation_clip.clone()).repeat();
+        animation_player
+            .play(animation_clip.clone())
+            .set_speed(initial_animation.speed)
+            .repeat();
         commands.entity(entity).remove::<InitialAnimation>();
     }
 }

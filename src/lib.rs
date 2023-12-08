@@ -1,5 +1,6 @@
 mod animating;
 mod arena;
+mod arrow;
 mod camera;
 mod cannon;
 mod door;
@@ -17,6 +18,7 @@ use bevy_yoleck::prelude::*;
 
 use self::animating::AnimatingPlugin;
 use self::arena::ArenaPlugin;
+use self::arrow::ArrowPlugin;
 use self::camera::MazeOfManyMissilesCameraPlugin;
 use self::cannon::CannonPlugin;
 use self::door::DoorPlugin;
@@ -75,6 +77,7 @@ impl Plugin for MazeOfManyMissilesPlugin {
         app.add_plugins(MissilePlugin);
         app.add_plugins(ExplosionPlugin);
         app.add_plugins(DoorPlugin);
+        app.add_plugins(ArrowPlugin);
         //app.add_plugins(FloatingTextPlugin);
 
         app.add_systems(Update, enable_disable_physics);
