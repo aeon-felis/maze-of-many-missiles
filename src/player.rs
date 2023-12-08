@@ -8,10 +8,12 @@ use bevy_tnua_rapier2d::{TnuaRapier2dIOBundle, TnuaRapier2dSensorShape};
 use bevy_yoleck::prelude::*;
 use bevy_yoleck::vpeol::VpeolWillContainClickableChildren;
 use bevy_yoleck::vpeol_3d::Vpeol3dPosition;
+use ordered_float::OrderedFloat;
 
 use crate::animating::{AnimationsOwner, GetClipsFrom};
+use crate::arena::IsBlock;
 use crate::explosion::PushableByExplosion;
-use crate::During;
+use crate::{AppState, During};
 
 pub struct PlayerPlugin;
 
@@ -27,6 +29,7 @@ impl Plugin for PlayerPlugin {
             Update,
             (set_player_facing, animate_player).in_set(During::Gameplay),
         );
+        app.add_systems(Update, kill_player_when_they_fall.in_set(During::Gameplay));
     }
 }
 
@@ -198,6 +201,26 @@ fn animate_player(
                     animation_player.play(clip.clone());
                 }
             },
+        }
+    }
+}
+
+fn kill_player_when_they_fall(
+    objects_query: Query<&GlobalTransform, With<IsBlock>>,
+    players_query: Query<&GlobalTransform, With<IsPlayer>>,
+    mut app_state: ResMut<NextState<AppState>>,
+) {
+    let Some(lowest_y) = objects_query
+        .iter()
+        .map(|transform| transform.transform_point(0.5 * Vec3::Y).y)
+        .min_by_key(|y| OrderedFloat(*y))
+    else {
+        return;
+    };
+    for player_transform in players_query.iter() {
+        let player_below_level = player_transform.translation().y - lowest_y;
+        if player_below_level < -50.0 {
+            app_state.set(AppState::GameOver);
         }
     }
 }
