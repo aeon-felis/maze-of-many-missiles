@@ -42,7 +42,7 @@ fn setup_camera(mut commands: Commands) {
             shadows_enabled: true,
             ..Default::default()
         },
-        transform: Transform::from_xyz(0.0, 100.0, 0.0).looking_to(-Vec3::Y, Vec3::Z),
+        transform: Transform::from_xyz(0.0, 1000.0, 100.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
 }
