@@ -41,7 +41,7 @@ fn add_controls_to_player(mut populate: YoleckPopulate<(), With<IsPlayer>>) {
                 input_map.insert(VirtualDPad::dpad(), PlayerAction::Run);
                 input_map.insert(DualAxis::left_stick(), PlayerAction::Run);
 
-                input_map.insert(KeyCode::Z, PlayerAction::Jump);
+                input_map.insert(KeyCode::Space, PlayerAction::Jump);
                 input_map.insert(KeyCode::J, PlayerAction::Jump);
                 input_map.insert(GamepadButtonType::South, PlayerAction::Jump);
 
